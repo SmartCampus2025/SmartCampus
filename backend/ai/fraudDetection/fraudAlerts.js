@@ -1,9 +1,10 @@
-// ai/fraudDetection/fraudAlerts.js
-
-export async function sendFraudAlert(anomaly, type) {
-  console.log(`🚨 Fraud Alert Detected in ${type.toUpperCase()}!`);
+// backend/ai/fraudDetection/fraudAlerts.js
+async function sendFraudAlert(anomaly, type) {
+  console.log(`🚨 Fraud Alert Detected in ${type ? type.toUpperCase() : 'UNKNOWN'}!`);
   console.log(`Details:`, anomaly);
-
-  // Here you can integrate with your intelligentAlerts system
-  // Example: notify via email, SMS, WhatsApp
+  return { success: true };
 }
+
+module.exports = {
+  sendFraudAlert
+};

@@ -1,8 +1,9 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const connectDB = require('./db');
+const connectDB = require('./config/db');
 const morgan = require('morgan');
 const cors = require('cors');
+const helmet = require('helmet');
 
 // Load environment variables
 dotenv.config();
@@ -17,15 +18,13 @@ const app = express();
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(cors());
-const rateLimiter = require('./middlewares/rateLimiter');
-const sanitizeInputs = require('./middlewares/inputSanitizer');
-const cors = require('./middlewares/cors');
-const helmet = require('helmet');
+app.use(helmet());
+
+const rateLimiter = require('./middleware/rateLimiter');
+const sanitizeInputs = require('./middleware/inputSanitizer');
 
 app.use(rateLimiter);
 app.use(sanitizeInputs);
-app.use(cors);
-app.use(helmet()); // Optional, provides security headers
 
 // ====== BASE ROUTE ======
 app.get('/', (req, res) => {
@@ -42,7 +41,7 @@ app.use('/api/principal', require('./routes/principalRoutes'));
 
 // ====== ACADEMIC MODULES ======
 app.use('/api/timetable', require('./routes/timetableRoutes'));
-app.use('/api/examschedule', require('./routes/examScheduleRoutes'));
+app.use('/api/examschedule', require('./routes/examSheduleRoutes'));
 app.use('/api/exams', require('./routes/examRoutes'));
 app.use('/api/results', require('./routes/resultRoutes'));
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
@@ -76,7 +75,7 @@ app.use('/api/complaints', require('./routes/complaintRoutes'));
 app.use('/api/syllabus', require('./routes/syllabusRoutes'));
 
 // ====== SELF-HEALING MODULES ======
-app.use('/api/selfheal', require('./routes/selfHealRoutes'));
+app.use('/api/selfheal', require('./routes/selfhealRoutes'));
 
 // ====== SELF-HEAL MONITOR MIDDLEWARE ======
 const selfHealMonitor = require("./middleware/selfHealMonitor");
@@ -92,13 +91,8 @@ app.use('/api/upload', require('./routes/uploadRoutes'));
 // ====== FUTURE SCALABLE INTEGRATIONS ======
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 
-// ===== Global Error Handling =====
-const globalErrorHandler = require('./middlewares/globalErrorHandler');
-const notFound = require('./middlewares/notFound');
-
 // ====== AI TASK AUTOMATION ======
 app.use('/api/automation', require('./routes/taskAutomationRoutes'));
-require('./ai/taskAutomationScheduler'); // auto-scheduler
 
 // ====== Predictive Analytics ======
 const aiRoutes = require("./routes/aiRoutes");
@@ -108,25 +102,32 @@ app.use("/api/ai", aiRoutes);
 const decisionSupportRoutes = require('./routes/decisionSupportRoutes');
 app.use('/api/ai/decision-support', decisionSupportRoutes);
 
-
-// after other requires and initializations
 // 1) Initialize event handlers and bus
-const eventHandlers = require('./ai/events/handlers'); // registers core handlers
+const eventHandlers = require('./ai/events/handlers');
 // 2) Expose route to emit events
 app.use('/api/events', require('./routes/eventsRoutes'));
 
-// Optional: log if redis enabled
-const eventBusInfo = require('./ai/events/eventBus').__internal__;
-console.log('EventBus in-memory ok, redisEnabled=', eventBusInfo.redisEnabled);
+// Log event bus status
+try {
+  const eventBusInfo = require('./ai/events/eventBus').__internal__;
+  if (eventBusInfo) {
+    console.log('EventBus in-memory ok, redisEnabled=', eventBusInfo.redisEnabled);
+  }
+} catch (e) {
+  console.warn('EventBus init warning:', e.message);
+}
 
-// Use routes here
+// ===== Global Error Handling =====
+const globalErrorHandler = require('./middleware/globalErrorHandler');
+const notFound = require('./middleware/notFound');
 
-app.use(notFound); // For unmatched routes
-app.use(globalErrorHandler); // Final error catcher
+app.use(notFound);
+app.use(globalErrorHandler);
 
 // ====== START SERVER ======
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+}
 
-// Debug Mongo connection
-console.log("Mongo URI at startup:", process.env.MONGODB_URI);
+module.exports = app;

@@ -1,20 +1,38 @@
 {
   "name": "smartcampus-backend",
   "version": "1.0.0",
-  "description": "Backend for SmartCampus",
+  "description": "Backend for SmartCampus - School, College & Madrassa Management System",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
   },
   "keywords": [],
   "author": "Ishfaq Alam",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "compromise": "^14.14.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.1.5",
+    "googleapis": "^144.0.0",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.1",
-    "mongoose": "^7.2.0"
+    "localforage": "^1.10.0",
+    "lodash": "^4.17.21",
+    "moment-hijri": "^2.1.2",
+    "mongoose": "^7.2.0",
+    "morgan": "^1.10.1",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "on-finished": "^2.4.1",
+    "pdfkit": "^0.15.1",
+    "twilio": "^5.4.0",
+    "xss-clean": "^0.1.4"
   }
 }

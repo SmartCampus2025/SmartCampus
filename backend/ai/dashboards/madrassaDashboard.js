@@ -1,9 +1,16 @@
-import { madrassaSupportEngine } from "../madrassa/madrassaSupport.js";
+// backend/ai/dashboards/madrassaDashboard.js
+const { getIslamicDate } = require('../madrassa/islamicCalendar');
+const { applyMadrassaSupport } = require('../madrassa/madrassaSupport');
 
-/**
- * Madrassa Dashboard
- * Handles madrassa-specific data and integrates with other modules
- */
-export async function processMadrassaData(type, data) {
-  return await madrassaSupportEngine(data, type);
+async function getMadrassaDashboardData() {
+  const date = getIslamicDate();
+  const support = await applyMadrassaSupport('General Attendance & Hifz Progress');
+  return {
+    date,
+    support
+  };
 }
+
+module.exports = {
+  getMadrassaDashboardData
+};

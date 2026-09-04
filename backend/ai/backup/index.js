@@ -1,6 +1,10 @@
-// ai/backup/index.js
-import BackupService from "./backupService.js";
-import CloudSyncService from "./cloudSyncService.js";
-import RestoreMonitor from "./restoreMonitor.js";
+// backend/ai/backup/index.js
+const BackupService = require('./backupService');
+const CloudSyncService = require('./cloudSyncService');
+const RestoreMonitor = require('./restoreMonitor');
 
-export { BackupService, CloudSyncService, RestoreMonitor };
+module.exports = {
+  BackupService,
+  CloudSyncService,
+  RestoreMonitor
+};

@@ -1,30 +1,28 @@
-// backend/ai/fraudDetection/fraudDetection.js
-
-/**
- * AI Fraud Detection
- * Detects unusual activity in financial and attendance data.
- */
-
-export function detectFraud(records, type = "financial") {
+// backend/ai/fraudDetection/anomalyDetection.js
+function detectAnomalies(records = [], type = 'financial') {
   const anomalies = [];
 
-  records.forEach(record => {
-    // Example: flag large or suspicious financial transactions
-    if (type === "financial" && record.amount > 1000000) {
-      anomalies.push({
-        record,
-        reason: "Unusually large financial transaction detected"
-      });
-    }
-
-    // Example: flag fake attendance spikes
-    if (type === "attendance" && record.attendanceMarked > record.totalStudents) {
-      anomalies.push({
-        record,
-        reason: "Impossible attendance data detected"
-      });
+  const arr = Array.isArray(records) ? records : [records];
+  arr.forEach(record => {
+    if (type === 'financial' || type === 'finance') {
+      if (record.amount > 50000 || record.amount < 0) {
+        anomalies.push({ record, reason: 'Suspicious amount' });
+      }
+    } else if (type === 'attendance') {
+      if (record.consecutiveAbsences > 5) {
+        anomalies.push({ record, reason: 'Consecutive absences exceeds threshold' });
+      }
     }
   });
 
   return anomalies;
 }
+
+function detectFraud(records = [], type = 'financial') {
+  return detectAnomalies(records, type);
+}
+
+module.exports = {
+  detectAnomalies,
+  detectFraud
+};

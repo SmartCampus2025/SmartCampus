@@ -1,29 +1,24 @@
-// ai/backup/backupRoutes.js
-import express from "express";
-import BackupService from "./backupService.js";
-import logger from "../../utils/logger.js";
+// backend/ai/backup/backupRoutes.js
+const express = require('express');
+const BackupService = require('./backupService');
+const logger = require('../../utils/logger');
 
 const router = express.Router();
 
 const backupService = new BackupService(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS
+  process.env.DB_NAME || 'smartcampus',
+  process.env.DB_USER || 'admin',
+  process.env.DB_PASS || 'pass'
 );
 
-// Manual backup route
-router.post("/backup", (req, res) => {
-  backupService.createBackup();
-  res.json({ message: "Backup initiated" });
+router.post('/create', async (req, res) => {
+  try {
+    const file = await backupService.createBackup();
+    res.json({ success: true, file });
+  } catch (err) {
+    logger.error('Backup error', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Manual restore route
-router.post("/restore", (req, res) => {
-  const { fileName } = req.body;
-  if (!fileName) return res.status(400).json({ error: "File name required" });
-
-  backupService.restoreBackup(fileName);
-  res.json({ message: `Restore initiated for ${fileName}` });
-});
-
-export default router;
+module.exports = router;
