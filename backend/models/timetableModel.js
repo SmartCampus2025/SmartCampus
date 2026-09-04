@@ -1,0 +1,34 @@
+const mongoose = require('mongoose');
+
+const timetableSchema = new mongoose.Schema({
+  classId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Class',
+    required: true
+  },
+  subjectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subject',
+    required: true
+  },
+  teacherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  day: {
+    type: String,
+    enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    required: true
+  },
+  startTime: {
+    type: String,
+    required: true
+  },
+  endTime: {
+    type: String,
+    required: true
+  },
+});
+
+module.exports = mongoose.model('Timetable', timetableSchema);

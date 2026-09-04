@@ -1,0 +1,8 @@
+{
+  "queries": [
+    { "pattern": "show all absent students", "action": "attendance_absent" },
+    { "pattern": "list fee defaulters", "action": "fee_unpaid" },
+    { "pattern": "show top performers", "action": "results_top" },
+    { "pattern": "my attendance", "action": "student_self_attendance" }
+  ]
+}
