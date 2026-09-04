@@ -1,16 +1,20 @@
-// /ai/nlpQuery/queryIntegration.js
-import { routeQuery } from "./queryRouter.js";
+// backend/ai/nlQuery/queryIntegration.js
+const { routeQuery } = require('./queryRouter');
 
-export async function handleDashboardQuery(query, user) {
+async function handleDashboardQuery(query, user) {
   const roleData = {
-    type: user.role, 
-    userId: user.id
+    type: user ? user.role : 'guest',
+    userId: user ? user.id : null
   };
 
   const result = await routeQuery(query, roleData);
 
   return {
-    dashboardWidget: "searchResults",
-    data: result
+    dashboardWidget: 'search_result',
+    result
   };
 }
+
+module.exports = {
+  handleDashboardQuery
+};

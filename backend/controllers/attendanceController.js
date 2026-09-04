@@ -1,3 +1,42 @@
+const Attendance = require('../models/attendanceModel');
+
+// Mark attendance
+exports.markAttendance = async (req, res) => {
+  try {
+    const { studentId, date, status, classId } = req.body;
+    const record = new Attendance({ studentId, date: date || new Date(), status, classId });
+    await record.save();
+    res.status(201).json({ message: 'Attendance marked successfully', record });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get class attendance
+exports.getClassAttendance = async (req, res) => {
+  try {
+    const { classId, date } = req.query;
+    const filter = {};
+    if (classId) filter.classId = classId;
+    if (date) filter.date = new Date(date);
+    const records = await Attendance.find(filter);
+    res.json(records);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get student attendance summary
+exports.getStudentAttendance = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const records = await Attendance.find({ studentId });
+    res.json(records);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Biometric-based attendance (plug-and-play ready)
 exports.markBiometric = async (req, res) => {
   try {

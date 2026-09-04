@@ -1,11 +1,13 @@
-import moment from "moment-hijri";
+// backend/ai/madrassa/islamicCalendar.js
+const moment = require('moment-hijri');
 
-/**
- * Returns today's date in both Gregorian & Hijri
- */
-export function getIslamicDate() {
+function getIslamicDate() {
   return {
-    gregorian: new Date().toISOString().split("T")[0],
-    hijri: moment().format("iYYYY-iMM-iDD"),
+    gregorian: new Date().toISOString().split('T')[0],
+    hijri: moment().format('iYYYY-iMM-iDD')
   };
 }
+
+module.exports = {
+  getIslamicDate
+};

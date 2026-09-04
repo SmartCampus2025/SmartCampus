@@ -1,9 +1,28 @@
-// ai/taskAutomationScheduler.js
+// ai/taskAutomationSheduler.js
 const cron = require('node-cron');
 const taskAutomationService = require('./taskAutomationService');
 
-// Run every day at 6 PM
-cron.schedule('0 18 * * *', async () => {
-  console.log("⚙️ Running daily AI Task Automation...");
-  await taskAutomationService.runAllTasks();
-});
+let taskScheduled = false;
+
+function initScheduler() {
+  if (process.env.NODE_ENV === 'test' || taskScheduled) return;
+
+  cron.schedule('0 8 * * *', async () => {
+    console.log('[AutomationScheduler] Running daily automated tasks...');
+    try {
+      await taskAutomationService.runDailyAutomation();
+    } catch (err) {
+      console.error('[AutomationScheduler] Error running tasks:', err);
+    }
+  });
+
+  taskScheduled = true;
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  initScheduler();
+}
+
+module.exports = {
+  initScheduler
+};

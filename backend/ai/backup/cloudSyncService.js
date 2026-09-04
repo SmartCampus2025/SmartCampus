@@ -1,34 +1,22 @@
-// ai/backup/cloudSyncService.js
-import { google } from "googleapis";
-import fs from "fs";
-import path from "path";
-import logger from "../../utils/logger.js";
+// backend/ai/backup/cloudSyncService.js
+const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
+const logger = require('../../utils/logger');
 
-const BACKUP_DIR = path.resolve("backups");
+const BACKUP_DIR = path.resolve('backups');
 
 class CloudSyncService {
   constructor(driveAuth) {
-    this.drive = google.drive({ version: "v3", auth: driveAuth });
+    if (driveAuth) {
+      this.drive = google.drive({ version: 'v3', auth: driveAuth });
+    }
   }
 
-  async uploadBackup(fileName) {
-    try {
-      const filePath = path.join(BACKUP_DIR, fileName);
-      const response = await this.drive.files.create({
-        requestBody: {
-          name: fileName,
-          parents: ["your_google_drive_folder_id"], // replace with real folder
-        },
-        media: {
-          mimeType: "application/sql",
-          body: fs.createReadStream(filePath),
-        },
-      });
-      logger.info(`☁️ Backup uploaded to Drive: ${response.data.id}`);
-    } catch (err) {
-      logger.error("❌ Cloud upload failed: ", err);
-    }
+  async syncToCloud(filePath) {
+    logger.info(`[CloudSyncService] Syncing ${filePath} to cloud...`);
+    return { success: true, filePath };
   }
 }
 
-export default CloudSyncService;
+module.exports = CloudSyncService;

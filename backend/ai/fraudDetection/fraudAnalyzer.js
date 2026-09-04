@@ -1,12 +1,16 @@
-// ai/fraudDetection/fraudAnalyzer.js
-import { detectAnomalies } from "./anomalyDetection.js";
+// backend/ai/fraudDetection/fraudAnalyzer.js
+const { detectAnomalies } = require('./anomalyDetection');
 
-export function analyzeFraud(data, type) {
-  const anomalies = detectAnomalies(data, type);
+function analyzeFraud(data, type) {
+  const anomalies = detectAnomalies(Array.isArray(data) ? data : [data], type);
 
   return anomalies.map((a) => ({
     ...a,
-    severity: a.reason.includes("amount") ? "High" : "Medium",
-    timestamp: new Date(),
+    severity: (a.reason && a.reason.includes('amount')) ? 'High' : 'Medium',
+    timestamp: new Date()
   }));
 }
+
+module.exports = {
+  analyzeFraud
+};
