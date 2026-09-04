@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+**/node_modules/
 
 # Environment / secrets
 .env
@@ -8,6 +9,7 @@ node_modules/
 
 # Logs
 *.log
+/tmp/
 
 # OS/editor files
 .DS_Store
@@ -16,8 +18,8 @@ Thumbs.db
 .idea/
 
 # Build/output
-node_modules/
 dist/
+**/dist/
 build/
 coverage/
 
