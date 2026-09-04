@@ -19,7 +19,8 @@ SmartCampus.pk is an all-in-one Management & Automation Platform for Schools, Co
 ### Frontend
 - **Framework**: React 18
 - **Build Tool**: Vite
-- **HTTP Client**: Axios
+- **HTTP Client**: Axios with JWT Request Interceptors & Error Handling
+- **UI & Layout**: Responsive Component Architecture, Dynamic Navigation, Role-Aware Dashboard Views, Loading Indicators, and Madrassa Arabic RTL mode toggle (`dir="rtl"`).
 
 ### Mobile
 - **Framework**: React Native (Expo)
@@ -43,11 +44,15 @@ SmartCampus.pk is an all-in-one Management & Automation Platform for Schools, Co
 │   ├── tests/                # Automated unit and integration test suite
 │   ├── package.json
 │   └── server.js             # Main server entry point
-├── frontend/                 # React frontend application
-│   ├── src/                  # React components, pages, and API clients
+├── frontend/                 # React 18 + Vite Frontend Application
+│   ├── src/                  # React components, pages, utilities, and API clients
+│   │   ├── components/       # Shared UI views (TimetableView, Navigation, etc.)
+│   │   ├── pages/            # Unified Role Dashboards (Admin, Staff, Student, Fee, AI Analytics, Library)
+│   │   ├── utils/            # Axios API Client (`timetableClient.js`) with JWT interceptors
+│   │   └── main.jsx          # React app entry point
 │   ├── index.html
 │   ├── package.json
-│   └── vite.config.js
+│   └── vite.config.js        # Vite dev server configuration with backend proxy
 ├── mobile/                   # React Native mobile application
 │   └── android-app/          # Mobile client app (screens, services, package.json)
 └── README.md
@@ -119,7 +124,7 @@ The server will start on `http://localhost:5000`.
 cd frontend
 npm run dev
 ```
-The frontend development server will start on `http://localhost:3000`.
+The frontend development server will start on `http://localhost:3000` with automatic backend proxying to `http://localhost:5000`.
 
 ### Building Frontend for Production
 ```bash
@@ -148,7 +153,7 @@ npm test
 
 ## API Summary & Key Endpoints
 
-- **Auth**: `/api/auth` (Register, Login)
+- **Auth**: `/api/auth` (Register, Login with JWT)
 - **Academic**: `/api/timetable`, `/api/exams`, `/api/results`, `/api/attendance`
 - **Madrassa & Arabic**: Hijri date & RTL support in `/api/ai`
 - **AI & Analytics**: `/api/ai/performance`, `/api/ai/fee-default`, `/api/ai/decision-support`
