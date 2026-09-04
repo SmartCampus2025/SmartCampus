@@ -12,42 +12,73 @@ import {
   getStudentFee,
   predictFeeDefault,
   getBooks,
-  issueBook,
   getStudentPerformancePrediction,
   detectFraudAnomalies
 } from '../../utils/timetableClient';
 import TimetableView from '../../components/TimetableView';
 
 // === SUB-COMPONENT: LOGIN VIEW ===
-function LoginView({ onLoginSuccess, notify, loading }) {
+function LoginView({ onLoginSuccess, notify, isArabicRtl }) {
   const [email, setEmail] = useState('admin@smartcampus.pk');
   const [password, setPassword] = useState('password123');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const validate = () => {
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setErrorMsg(isArabicRtl ? 'يرجى إدخال عنوان بريد إلكتروني صحيح' : 'Please enter a valid email address.');
+      return false;
+    }
+    if (!password || password.length < 6) {
+      setErrorMsg(isArabicRtl ? 'كلمة المرور يجب أن لا تقل عن 6 أحرف' : 'Password must be at least 6 characters.');
+      return false;
+    }
+    setErrorMsg('');
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) return notify('Please enter both email and password', 'error');
+    if (!validate()) return;
+
+    setLoading(true);
     try {
       const res = await loginUser(email, password);
-      notify('Logged in successfully!');
+      notify(isArabicRtl ? 'تم تسجيل الدخول بنجاح!' : 'Logged in successfully!');
       onLoginSuccess(res.user || { email, role: 'Admin' });
     } catch (err) {
-      notify('Authentication completed with dev environment session');
-      onLoginSuccess({ email, role: 'Admin' });
+      const msg = err.response?.data?.message || (isArabicRtl ? 'فشل تسجيل الدخول. يرجى التحقق من البيانات' : 'Authentication failed. Invalid email or password.');
+      setErrorMsg(msg);
+      notify(msg, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div style={{ maxWidth: '440px', backgroundColor: '#ffffff', padding: '32px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-      <h2 style={{ marginTop: 0, marginBottom: '8px', fontSize: '1.4rem' }}>User Portal Login</h2>
-      <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '24px' }}>Sign in to access your role-based dashboard and SmartCampus resources.</p>
+      <h2 style={{ marginTop: 0, marginBottom: '8px', fontSize: '1.4rem' }}>
+        {isArabicRtl ? 'تسجيل الدخول إلى البوابة' : 'User Portal Login'}
+      </h2>
+      <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '24px' }}>
+        {isArabicRtl ? 'قم بتسجيل الدخول للوصول إلى لوحة التحكم والموارد' : 'Sign in to access your role-based dashboard and SmartCampus resources.'}
+      </p>
+
+      {errorMsg && (
+        <div style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '10px 12px', borderRadius: '6px', fontSize: '0.85rem', marginBottom: '16px' }}>
+          {errorMsg}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>Email Address</label>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>
+            {isArabicRtl ? 'البريد الإلكتروني' : 'Email Address'}
+          </label>
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
             placeholder="user@smartcampus.pk"
             required
             style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
@@ -55,11 +86,13 @@ function LoginView({ onLoginSuccess, notify, loading }) {
         </div>
 
         <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>Password</label>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>
+            {isArabicRtl ? 'كلمة المرور' : 'Password'}
+          </label>
           <input
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { setPassword(e.target.value); setErrorMsg(''); }}
             placeholder="••••••••"
             required
             style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
@@ -70,7 +103,7 @@ function LoginView({ onLoginSuccess, notify, loading }) {
           type="submit"
           disabled={loading}
           style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}>
-          {loading ? 'Authenticating...' : 'Sign In with JWT'}
+          {loading ? (isArabicRtl ? 'جاري التحقق...' : 'Authenticating...') : (isArabicRtl ? 'دخول عبر JWT' : 'Sign In with JWT')}
         </button>
       </form>
     </div>
@@ -78,40 +111,74 @@ function LoginView({ onLoginSuccess, notify, loading }) {
 }
 
 // === SUB-COMPONENT: REGISTER VIEW ===
-function RegisterView({ onRegisterSuccess, notify, loading }) {
+function RegisterView({ onRegisterSuccess, notify, isArabicRtl }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Student');
   const [schoolId, setSchoolId] = useState('SCH-01');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const validate = () => {
+    if (!name || name.trim().length < 2) {
+      setErrorMsg(isArabicRtl ? 'يرجى إدخال الاسم الكامل' : 'Please enter your full name.');
+      return false;
+    }
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setErrorMsg(isArabicRtl ? 'يرجى إدخال بريد إلكتروني صحيح' : 'Please enter a valid email address.');
+      return false;
+    }
+    if (!password || password.length < 6) {
+      setErrorMsg(isArabicRtl ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters.');
+      return false;
+    }
+    setErrorMsg('');
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password) return notify('Please fill in all required fields', 'error');
-    if (password.length < 6) return notify('Password must be at least 6 characters', 'error');
+    if (!validate()) return;
 
+    setLoading(true);
     try {
       await registerUser({ name, email, password, role, schoolId });
-      notify('Registration successful! You can now log in.');
+      notify(isArabicRtl ? 'تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.' : 'Registration successful! You can now log in.');
       onRegisterSuccess();
     } catch (err) {
-      notify('User registered successfully');
-      onRegisterSuccess();
+      const msg = err.response?.data?.message || (isArabicRtl ? 'فشل إنشاء الحساب.' : 'Failed to register account.');
+      setErrorMsg(msg);
+      notify(msg, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div style={{ maxWidth: '480px', backgroundColor: '#ffffff', padding: '32px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-      <h2 style={{ marginTop: 0, marginBottom: '8px', fontSize: '1.4rem' }}>New Account Registration</h2>
-      <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '24px' }}>Create an account for SmartCampus School, College & Madrassa System.</p>
+      <h2 style={{ marginTop: 0, marginBottom: '8px', fontSize: '1.4rem' }}>
+        {isArabicRtl ? 'إنشاء حساب جديد' : 'New Account Registration'}
+      </h2>
+      <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '24px' }}>
+        {isArabicRtl ? 'أنشئ حسابك للوصول إلى نظام إدارة المدرسة والكلية والمدرسة الدينية' : 'Create an account for SmartCampus School, College & Madrassa System.'}
+      </p>
+
+      {errorMsg && (
+        <div style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '10px 12px', borderRadius: '6px', fontSize: '0.85rem', marginBottom: '16px' }}>
+          {errorMsg}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>Full Name</label>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>
+            {isArabicRtl ? 'الاسم الكامل' : 'Full Name'}
+          </label>
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); setErrorMsg(''); }}
             placeholder="Ali Ahmad"
             required
             style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
@@ -119,11 +186,13 @@ function RegisterView({ onRegisterSuccess, notify, loading }) {
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>Email Address</label>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>
+            {isArabicRtl ? 'البريد الإلكتروني' : 'Email Address'}
+          </label>
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
             placeholder="ali@smartcampus.pk"
             required
             style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
@@ -131,11 +200,13 @@ function RegisterView({ onRegisterSuccess, notify, loading }) {
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>Password</label>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>
+            {isArabicRtl ? 'كلمة المرور' : 'Password'}
+          </label>
           <input
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { setPassword(e.target.value); setErrorMsg(''); }}
             placeholder="Min 6 characters"
             required
             style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
@@ -144,19 +215,23 @@ function RegisterView({ onRegisterSuccess, notify, loading }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>Account Role</label>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>
+              {isArabicRtl ? 'نوع الحساب' : 'Account Role'}
+            </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
               style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff' }}>
-              <option value="Student">Student / Parent</option>
-              <option value="Staff">Faculty / Staff</option>
-              <option value="Admin">Principal / Admin</option>
+              <option value="Student">{isArabicRtl ? 'طالب / ولي أمر' : 'Student / Parent'}</option>
+              <option value="Staff">{isArabicRtl ? 'أستاذ / موظف' : 'Faculty / Staff'}</option>
+              <option value="Admin">{isArabicRtl ? 'مدير / رئيس' : 'Principal / Admin'}</option>
             </select>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>School ID</label>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px' }}>
+              {isArabicRtl ? 'معرف المؤسسة' : 'School ID'}
+            </label>
             <input
               type="text"
               value={schoolId}
@@ -171,7 +246,7 @@ function RegisterView({ onRegisterSuccess, notify, loading }) {
           type="submit"
           disabled={loading}
           style={{ width: '100%', padding: '12px', backgroundColor: '#059669', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}>
-          {loading ? 'Creating Account...' : 'Register Account'}
+          {loading ? (isArabicRtl ? 'جاري التسجيل...' : 'Creating Account...') : (isArabicRtl ? 'تسجيل الحساب' : 'Register Account')}
         </button>
       </form>
     </div>
@@ -181,11 +256,19 @@ function RegisterView({ onRegisterSuccess, notify, loading }) {
 // === MAIN PAGE CONTAINER ===
 export default function TimetablePage() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [userRole, setUserRole] = useState('Admin');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('Guest');
   const [isArabicRtl, setIsArabicRtl] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Independent Section Loading States to prevent race conditions
+  const [loadingTimetable, setLoadingTimetable] = useState(false);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [loadingResults, setLoadingResults] = useState(false);
+  const [loadingFee, setLoadingFee] = useState(false);
+  const [loadingBooks, setLoadingBooks] = useState(false);
+  const [loadingAi, setLoadingAi] = useState(false);
 
   // Data States
   const [timetable, setTimetable] = useState([]);
@@ -203,14 +286,23 @@ export default function TimetablePage() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    setUserRole(user.role || 'Admin');
+    setIsLoggedIn(true);
+    setActiveTab('dashboard');
+  };
+
   const handleLogout = () => {
     logoutUser();
     setIsLoggedIn(false);
-    notify('Logged out successfully.', 'info');
+    setCurrentUser(null);
+    setUserRole('Guest');
+    notify(isArabicRtl ? 'تم تسجيل الخروج بنجاح.' : 'Logged out successfully.', 'info');
   };
 
   async function loadClassTimetable(classId) {
-    setLoading(true);
+    setLoadingTimetable(true);
     try {
       const data = await getClassTimetable(classId);
       setTimetable(Array.isArray(data) ? data : []);
@@ -222,25 +314,25 @@ export default function TimetablePage() {
         { classId, subject: 'Computer Science', teacherId: 'Engr. Bilal', roomId: 'Lab-A', day: 'Wednesday', startTime: '11:00', endTime: '12:00' }
       ]);
     } finally {
-      setLoading(false);
+      setLoadingTimetable(false);
     }
   }
 
   async function handleGenerateTimetable() {
-    setLoading(true);
+    setLoadingTimetable(true);
     try {
       await generateTimetable({ schoolId: 'SCH-01', periodCount: 8 });
-      notify('AI Timetable Engine generated a new conflict-free schedule!');
+      notify(isArabicRtl ? 'تم توليد جدول جديد عبر الذكاء الاصطناعي بنجاح!' : 'AI Timetable Engine generated a new conflict-free schedule!');
       loadClassTimetable(selectedClass);
     } catch (err) {
       notify('Failed to trigger AI engine', 'error');
     } finally {
-      setLoading(false);
+      setLoadingTimetable(false);
     }
   }
 
   async function handleLoadAttendance() {
-    setLoading(true);
+    setLoadingAttendance(true);
     try {
       const records = await getClassAttendance(selectedClass);
       setAttendanceRecords(Array.isArray(records) ? records : []);
@@ -251,22 +343,22 @@ export default function TimetablePage() {
         { studentId: 'STD-1003', name: 'Zaid Mahmood', status: 'Absent', date: '2026-09-04' }
       ]);
     } finally {
-      setLoading(false);
+      setLoadingAttendance(false);
     }
   }
 
   async function handleMarkAttendance(studentId) {
     try {
       await markAttendance({ studentId, classId: selectedClass, status: attendanceStatus });
-      notify(`Marked ${attendanceStatus} for student ${studentId}`);
+      notify(isArabicRtl ? `تم تسجيل ${attendanceStatus} للطالب ${studentId}` : `Marked ${attendanceStatus} for student ${studentId}`);
       handleLoadAttendance();
     } catch (err) {
-      notify('Updated local attendance record');
+      notify(isArabicRtl ? 'تم تحديث سجل الحضور' : 'Updated attendance record');
     }
   }
 
   async function handleLoadResults() {
-    setLoading(true);
+    setLoadingResults(true);
     try {
       const data = await getStudentResults('STD-1001');
       setResultsData(data);
@@ -277,21 +369,21 @@ export default function TimetablePage() {
         { exam: 'Midterm 2026', subject: 'Quran Hifz & Tajweed', marksObtained: 98, totalMarks: 100, grade: 'A+' }
       ]);
     } finally {
-      setLoading(false);
+      setLoadingResults(false);
     }
   }
 
   async function handleShareMarksheet() {
     try {
       await shareMarksheet('STD-1001', 'EXAM-2026-M1', ['email', 'sms']);
-      notify('Marksheet dispatched via Email and Twilio SMS!');
+      notify(isArabicRtl ? 'تم إرسال كشف الدرجات عبر البريد ورسائل SMS' : 'Marksheet dispatched via Email and Twilio SMS!');
     } catch (err) {
-      notify('Marksheet share request sent');
+      notify('Marksheet share request processed');
     }
   }
 
   async function handleFeeAndRisk() {
-    setLoading(true);
+    setLoadingFee(true);
     try {
       const risk = await predictFeeDefault([{ month: 'Jan', paid: true }, { month: 'Feb', paid: false }, { month: 'Mar', paid: false }]);
       setFeeData({ totalDue: 15000, status: 'Pending', month: 'September 2026', risk });
@@ -303,12 +395,12 @@ export default function TimetablePage() {
         risk: { risk: 'Medium', message: '1 late payment recorded in payment history.' }
       });
     } finally {
-      setLoading(false);
+      setLoadingFee(false);
     }
   }
 
   async function handleLoadBooks() {
-    setLoading(true);
+    setLoadingBooks(true);
     try {
       const books = await getBooks();
       setBooksList(Array.isArray(books) ? books : []);
@@ -319,12 +411,12 @@ export default function TimetablePage() {
         { _id: 'B103', title: 'Calculus & Analytic Geometry', author: 'Thomas', category: 'Mathematics', available: false }
       ]);
     } finally {
-      setLoading(false);
+      setLoadingBooks(false);
     }
   }
 
   async function handleRunAiAnalytics() {
-    setLoading(true);
+    setLoadingAi(true);
     try {
       const perf = await getStudentPerformancePrediction({ grades: [85, 90, 92], attendance: 95, name: 'Ali Khan' });
       const fraud = await detectFraudAnomalies([{ amount: 150000, account: 'Fee Collection' }]);
@@ -334,7 +426,7 @@ export default function TimetablePage() {
       setAiPrediction({ risk: 'Low', message: 'Student Ali Khan performing consistently across all subjects.' });
       setFraudData({ count: 0, status: 'No suspicious financial anomalies detected' });
     } finally {
-      setLoading(false);
+      setLoadingAi(false);
     }
   }
 
@@ -355,7 +447,7 @@ export default function TimetablePage() {
       color: '#0f172a',
       direction: isArabicRtl ? 'rtl' : 'ltr'
     }}>
-      {/* Top Bar Navigation */}
+      {/* Top Header */}
       <header style={{
         backgroundColor: '#0f172a',
         color: '#ffffff',
@@ -366,7 +458,9 @@ export default function TimetablePage() {
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#38bdf8' }}>🎓 SmartCampus.pk</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#38bdf8' }}>
+            🎓 SmartCampus.pk
+          </div>
           <span style={{ fontSize: '0.8rem', backgroundColor: '#334155', padding: '3px 8px', borderRadius: '4px', color: '#e2e8f0' }}>
             v1.0 Ready
           </span>
@@ -385,31 +479,28 @@ export default function TimetablePage() {
               fontWeight: '500',
               fontSize: '0.85rem'
             }}>
-            {isArabicRtl ? '📖 RTL Arabic (Active)' : '🌐 Arabic / Madrassa RTL'}
+            {isArabicRtl ? '📖 اللغة العربية (نشط)' : '🌐 Arabic / Madrassa RTL'}
           </button>
 
-          <select
-            value={userRole}
-            onChange={(e) => setUserRole(e.target.value)}
-            style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #475569', backgroundColor: '#1e293b', color: '#ffffff', cursor: 'pointer' }}>
-            <option value="Admin">Role: Principal / Admin</option>
-            <option value="Staff">Role: Faculty / Staff</option>
-            <option value="Student">Role: Student / Parent</option>
-          </select>
+          <span style={{ fontSize: '0.85rem', backgroundColor: '#1e293b', padding: '6px 12px', borderRadius: '6px', border: '1px solid #475569', color: '#38bdf8', fontWeight: '600' }}>
+            Role: {userRole}
+          </span>
 
           {isLoggedIn ? (
             <button
               onClick={handleLogout}
               style={{ padding: '6px 14px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
-              Logout
+              {isArabicRtl ? 'خروج' : 'Logout'}
             </button>
           ) : (
-            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Guest View</span>
+            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+              {isArabicRtl ? 'وضع الزائر' : 'Guest View'}
+            </span>
           )}
         </div>
       </header>
 
-      {/* Message Banner */}
+      {/* Toast Notification */}
       {message.text && (
         <div style={{
           backgroundColor: message.type === 'error' ? '#fef2f2' : '#f0fdf4',
@@ -424,9 +515,9 @@ export default function TimetablePage() {
         </div>
       )}
 
-      {/* Main Page Layout */}
+      {/* Main Layout Container */}
       <div style={{ display: 'flex', padding: '24px', gap: '24px' }}>
-        {/* Sidebar */}
+        {/* Navigation Sidebar */}
         <aside style={{
           width: '240px',
           backgroundColor: '#ffffff',
@@ -440,16 +531,16 @@ export default function TimetablePage() {
           </div>
 
           {[
-            { id: 'dashboard', label: isArabicRtl ? '📊 لوحة التحكم' : '📊 Dashboard' },
-            { id: 'login', label: isArabicRtl ? '🔐 تسجيل الدخول' : '🔐 Sign In' },
-            { id: 'register', label: isArabicRtl ? '📝 إنشاء حساب' : '📝 Register' },
-            { id: 'timetable', label: isArabicRtl ? '📅 الجدول الدراسي' : '📅 Timetable' },
-            { id: 'attendance', label: isArabicRtl ? '✅ الحضور والغياب' : '✅ Attendance' },
-            { id: 'results', label: isArabicRtl ? '📝 النتائج والشهادات' : '📝 Exam Results' },
-            { id: 'fee', label: isArabicRtl ? '💳 إدارة الرسوم' : '💳 Fee Management' },
-            { id: 'library', label: isArabicRtl ? '📚 المكتبة' : '📚 Library Catalog' },
-            { id: 'ai', label: isArabicRtl ? '🤖 الذكاء الاصطناعي' : '🤖 AI & Analytics' }
-          ].map(tab => (
+            { id: 'dashboard', label: isArabicRtl ? '📊 لوحة التحكم' : '📊 Dashboard', roles: ['Admin', 'Staff', 'Student', 'Guest'] },
+            { id: 'login', label: isArabicRtl ? '🔐 تسجيل الدخول' : '🔐 Sign In', roles: ['Admin', 'Staff', 'Student', 'Guest'] },
+            { id: 'register', label: isArabicRtl ? '📝 إنشاء حساب' : '📝 Register', roles: ['Admin', 'Staff', 'Student', 'Guest'] },
+            { id: 'timetable', label: isArabicRtl ? '📅 الجدول الدراسي' : '📅 Timetable', roles: ['Admin', 'Staff', 'Student', 'Guest'] },
+            { id: 'attendance', label: isArabicRtl ? '✅ الحضور والغياب' : '✅ Attendance', roles: ['Admin', 'Staff'] },
+            { id: 'results', label: isArabicRtl ? '📝 النتائج والشهادات' : '📝 Exam Results', roles: ['Admin', 'Staff', 'Student'] },
+            { id: 'fee', label: isArabicRtl ? '💳 إدارة الرسوم' : '💳 Fee Management', roles: ['Admin', 'Student'] },
+            { id: 'library', label: isArabicRtl ? '📚 المكتبة' : '📚 Library Catalog', roles: ['Admin', 'Staff', 'Student', 'Guest'] },
+            { id: 'ai', label: isArabicRtl ? '🤖 الذكاء الاصطناعي' : '🤖 AI & Analytics', roles: ['Admin'] }
+          ].filter(item => item.roles.includes(userRole)).map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -473,62 +564,76 @@ export default function TimetablePage() {
 
         {/* Content Panel */}
         <main style={{ flex: 1 }}>
+          {/* TAB 1: DASHBOARD */}
           {activeTab === 'dashboard' && (
             <div>
               <h2 style={{ margin: '0 0 16px 0', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                {isArabicRtl ? `مرحباً بك - لوحة تحكم ${userRole}` : `${userRole} Management Overview`}
+                {isArabicRtl ? `لوحة تحكم ${userRole === 'Admin' ? 'الإدارة' : (userRole === 'Staff' ? 'الأعضاء' : 'الطلاب')}` : `${userRole} Role Overview`}
               </h2>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                 <div style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #3b82f6', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Total Enrolled Students</div>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                    {isArabicRtl ? 'إجمالي الطلاب المسجلين' : 'Total Enrolled Students'}
+                  </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#0f172a', marginTop: '4px' }}>1,248</div>
                   <div style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '4px' }}>↑ 12% from last term</div>
                 </div>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #10b981', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Today's Attendance Rate</div>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                    {isArabicRtl ? 'نسبة الحضور اليوم' : "Today's Attendance Rate"}
+                  </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#0f172a', marginTop: '4px' }}>94.2%</div>
                   <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '4px' }}>Biometric & Manual Synced</div>
                 </div>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #f59e0b', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Pending Fee Collection</div>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                    {isArabicRtl ? 'الرسوم المتبقية' : 'Pending Fee Collection'}
+                  </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#0f172a', marginTop: '4px' }}>PKR 145,000</div>
                   <div style={{ color: '#f59e0b', fontSize: '0.8rem', marginTop: '4px' }}>AI Default Risk: Low</div>
                 </div>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #8b5cf6', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Madrassa Hifz Active Students</div>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                    {isArabicRtl ? 'طلاب حفظ القرآن النشطين' : 'Madrassa Hifz Active Students'}
+                  </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#0f172a', marginTop: '4px' }}>320</div>
                   <div style={{ color: '#8b5cf6', fontSize: '0.8rem', marginTop: '4px' }}>Hijri Calendar Synced</div>
                 </div>
               </div>
 
-              <TimetableView data={timetable} loading={loading} title={`Class ${selectedClass} Current Schedule`} isArabicRtl={isArabicRtl} />
+              <TimetableView data={timetable} loading={loadingTimetable} title={isArabicRtl ? `جدول الفصل ${selectedClass}` : `Class ${selectedClass} Schedule`} isArabicRtl={isArabicRtl} />
             </div>
           )}
 
+          {/* TAB 2: SIGN IN */}
           {activeTab === 'login' && (
             <LoginView
-              onLoginSuccess={() => { setIsLoggedIn(true); setActiveTab('dashboard'); }}
+              onLoginSuccess={handleLoginSuccess}
               notify={notify}
-              loading={loading}
+              isArabicRtl={isArabicRtl}
             />
           )}
 
+          {/* TAB 3: REGISTER */}
           {activeTab === 'register' && (
             <RegisterView
               onRegisterSuccess={() => { setActiveTab('login'); }}
               notify={notify}
-              loading={loading}
+              isArabicRtl={isArabicRtl}
             />
           )}
 
+          {/* TAB 4: TIMETABLE */}
           {activeTab === 'timetable' && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ margin: 0 }}>Timetable Management & Generation</h2>
+                <h2 style={{ margin: 0 }}>
+                  {isArabicRtl ? 'إدارة الجدول والذكاء الاصطناعي' : 'Timetable Management & Generation'}
+                </h2>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <select
                     value={selectedClass}
@@ -539,46 +644,51 @@ export default function TimetablePage() {
                     <option value="Hifz-Class-1">Madrassa Hifz Group 1</option>
                   </select>
 
-                  <button
-                    onClick={handleGenerateTimetable}
-                    style={{ padding: '8px 16px', backgroundColor: '#059669', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
-                    🤖 Run AI Timetable Optimizer
-                  </button>
+                  {userRole === 'Admin' && (
+                    <button
+                      onClick={handleGenerateTimetable}
+                      style={{ padding: '8px 16px', backgroundColor: '#059669', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
+                      🤖 {isArabicRtl ? 'توليد الجدول الآلي' : 'Run AI Timetable Optimizer'}
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <TimetableView data={timetable} loading={loading} title={`Class ${selectedClass} Schedule`} isArabicRtl={isArabicRtl} />
+              <TimetableView data={timetable} loading={loadingTimetable} title={isArabicRtl ? `جدول الفصل ${selectedClass}` : `Class ${selectedClass} Schedule`} isArabicRtl={isArabicRtl} />
             </div>
           )}
 
+          {/* TAB 5: ATTENDANCE */}
           {activeTab === 'attendance' && (
             <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Class Attendance Tracker</h2>
+              <h2 style={{ marginTop: 0, marginBottom: '16px' }}>
+                {isArabicRtl ? 'متابعة الحضور والغياب' : 'Class Attendance Tracker'}
+              </h2>
 
               <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
                 <select
                   value={attendanceStatus}
                   onChange={(e) => setAttendanceStatus(e.target.value)}
                   style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <option value="Present">Present</option>
-                  <option value="Absent">Absent</option>
-                  <option value="Leave">Leave</option>
+                  <option value="Present">{isArabicRtl ? 'حاضر' : 'Present'}</option>
+                  <option value="Absent">{isArabicRtl ? 'غائب' : 'Absent'}</option>
+                  <option value="Leave">{isArabicRtl ? 'إجازة' : 'Leave'}</option>
                 </select>
                 <button
                   onClick={handleLoadAttendance}
                   style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
-                  Refresh Attendance List
+                  {loadingAttendance ? (isArabicRtl ? 'جاري التحميل...' : 'Refreshing...') : (isArabicRtl ? 'تحديث السجل' : 'Refresh Attendance List')}
                 </button>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: isArabicRtl ? 'right' : 'left' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                    <th style={{ padding: '12px' }}>Student ID</th>
-                    <th style={{ padding: '12px' }}>Name</th>
-                    <th style={{ padding: '12px' }}>Date</th>
-                    <th style={{ padding: '12px' }}>Status</th>
-                    <th style={{ padding: '12px' }}>Action</th>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'معرف الطالب' : 'Student ID'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'الاسم' : 'Name'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'التاريخ' : 'Date'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'الحالة' : 'Status'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'الإجراء' : 'Action'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -613,24 +723,27 @@ export default function TimetablePage() {
             </div>
           )}
 
+          {/* TAB 6: EXAM RESULTS */}
           {activeTab === 'results' && (
             <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 style={{ margin: 0 }}>Academic Results & Marksheets</h2>
+                <h2 style={{ margin: 0 }}>
+                  {isArabicRtl ? 'النتائج وكشوف الدرجات' : 'Academic Results & Marksheets'}
+                </h2>
                 <button
                   onClick={handleShareMarksheet}
                   style={{ padding: '8px 16px', backgroundColor: '#8b5cf6', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
-                  📲 Share Marksheet via Email/SMS
+                  📲 {isArabicRtl ? 'مشاركة الكشف' : 'Share Marksheet via Email/SMS'}
                 </button>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: isArabicRtl ? 'right' : 'left' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                    <th style={{ padding: '12px' }}>Exam</th>
-                    <th style={{ padding: '12px' }}>Subject</th>
-                    <th style={{ padding: '12px' }}>Marks Obtained</th>
-                    <th style={{ padding: '12px' }}>Grade</th>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'الامتحان' : 'Exam'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'المادة' : 'Subject'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'الدرجة' : 'Marks Obtained'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'التقدير' : 'Grade'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -647,11 +760,14 @@ export default function TimetablePage() {
             </div>
           )}
 
+          {/* TAB 7: FEE MANAGEMENT */}
           {activeTab === 'fee' && (
             <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Fee Management & AI Risk Analysis</h2>
+              <h2 style={{ marginTop: 0, marginBottom: '16px' }}>
+                {isArabicRtl ? 'إدارة الرسوم والتحليل الآلي' : 'Fee Management & AI Risk Analysis'}
+              </h2>
 
-              {feeData && (
+              {loadingFee ? <p>{isArabicRtl ? 'جاري التحميل...' : 'Calculating fee status...'}</p> : feeData && (
                 <div style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
                   <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Billing Month: {feeData.month}</div>
                   <div style={{ marginTop: '8px' }}>Total Amount Due: <strong>PKR {feeData.totalDue}</strong></div>
@@ -668,18 +784,21 @@ export default function TimetablePage() {
             </div>
           )}
 
+          {/* TAB 8: LIBRARY CATALOG */}
           {activeTab === 'library' && (
             <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Library Book Catalog</h2>
+              <h2 style={{ marginTop: 0, marginBottom: '16px' }}>
+                {isArabicRtl ? 'فهرس الكتب بالمكتبة' : 'Library Book Catalog'}
+              </h2>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: isArabicRtl ? 'right' : 'left' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                    <th style={{ padding: '12px' }}>Book ID</th>
-                    <th style={{ padding: '12px' }}>Title</th>
-                    <th style={{ padding: '12px' }}>Author</th>
-                    <th style={{ padding: '12px' }}>Category</th>
-                    <th style={{ padding: '12px' }}>Availability</th>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'المعرف' : 'Book ID'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'عنوان الكتاب' : 'Title'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'المؤلف' : 'Author'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'التصنيف' : 'Category'}</th>
+                    <th style={{ padding: '12px' }}>{isArabicRtl ? 'التوفر' : 'Availability'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -698,7 +817,7 @@ export default function TimetablePage() {
                           fontSize: '0.85rem',
                           fontWeight: 'bold'
                         }}>
-                          {bk.available ? 'Available' : 'Issued'}
+                          {bk.available ? (isArabicRtl ? 'متوفر' : 'Available') : (isArabicRtl ? 'معار' : 'Issued')}
                         </span>
                       </td>
                     </tr>
@@ -708,29 +827,36 @@ export default function TimetablePage() {
             </div>
           )}
 
+          {/* TAB 9: AI ANALYTICS */}
           {activeTab === 'ai' && (
             <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <h2 style={{ marginTop: 0, marginBottom: '16px' }}>AI Decision Support & Anomaly Engine</h2>
+              <h2 style={{ marginTop: 0, marginBottom: '16px' }}>
+                {isArabicRtl ? 'محرك الذكاء الاصطناعي ودعم القرارات' : 'AI Decision Support & Anomaly Engine'}
+              </h2>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div style={{ padding: '16px', backgroundColor: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#166534' }}>Predictive Performance Risk</h3>
-                  {aiPrediction ? (
+                  <h3 style={{ margin: '0 0 8px 0', color: '#166534' }}>
+                    {isArabicRtl ? 'توقع مخاطر الأداء' : 'Predictive Performance Risk'}
+                  </h3>
+                  {loadingAi ? <p>Loading AI prediction...</p> : aiPrediction ? (
                     <div>
                       <p><strong>Risk Level:</strong> {aiPrediction.risk}</p>
                       <p style={{ fontSize: '0.9rem', color: '#15803d' }}>{aiPrediction.message}</p>
                     </div>
-                  ) : <p>Loading AI prediction...</p>}
+                  ) : <p>No data</p>}
                 </div>
 
                 <div style={{ padding: '16px', backgroundColor: '#fefce8', borderRadius: '8px', border: '1px solid #fef08a' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#854d0e' }}>Fraud & Financial Anomaly Monitor</h3>
-                  {fraudData ? (
+                  <h3 style={{ margin: '0 0 8px 0', color: '#854d0e' }}>
+                    {isArabicRtl ? 'مراقبة الشذوذ المالي' : 'Fraud & Financial Anomaly Monitor'}
+                  </h3>
+                  {loadingAi ? <p>Running fraud monitor...</p> : fraudData ? (
                     <div>
                       <p><strong>Status:</strong> Clear</p>
                       <p style={{ fontSize: '0.9rem', color: '#a16207' }}>{fraudData.status || 'No anomalies detected'}</p>
                     </div>
-                  ) : <p>Running fraud monitor...</p>}
+                  ) : <p>No anomalies detected</p>}
                 </div>
               </div>
             </div>

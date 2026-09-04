@@ -10,17 +10,19 @@ SmartCampus.pk is an all-in-one Management & Automation Platform for Schools, Co
 - **Runtime**: Node.js (v18+)
 - **Framework**: Express.js
 - **Database**: MongoDB with Mongoose ODM
-- **Key Modules**:
-  - **AI Engine & Analytics**: Predictive risk detection, natural language querying (via `compromise`), decision support, and fraud monitoring.
+- **Security & Authorization**: Role-Based Access Control (`ensureAdmin`, `ensureTeacherOrAdmin`, `ensureStaff`, `ensureAuth`), rate limiting (`express-rate-limit`), input sanitization (`express-mongo-sanitize`), security headers (`helmet`), and CORS protection.
+- **AI & Analytics Engines**:
+  - **Predictive Analytics**: Weighted risk scoring for student performance/dropout probability and fee default risk analysis.
+  - **Anomaly & Fraud Detection**: Statistical z-score outlier detection for financial accounts and attendance pattern checks.
+  - **Decision Support**: Multi-factor risk scoring combining academic marks, attendance rates, and fee status into institutional recommendations.
   - **Madrassa Suite**: Arabic RTL support and Hijri calendar conversions (via `moment-hijri`).
-  - **Automations**: Task automation scheduler (`node-cron`), PDF marksheets (`pdfkit`), SMS notifications (`twilio`), and email dispatch (`nodemailer`).
-  - **Security & Protection**: Rate limiting (`express-rate-limit`), input sanitization (`express-mongo-sanitize`), security headers (`helmet`), and CORS management.
+- **Automations**: Task automation scheduler (`node-cron`), PDF marksheets (`pdfkit`), SMS notifications (`twilio`), and email dispatch (`nodemailer`).
 
 ### Frontend
 - **Framework**: React 18
 - **Build Tool**: Vite
-- **HTTP Client**: Axios with JWT Request Interceptors & Error Handling
-- **UI & Layout**: Responsive Component Architecture, Dynamic Navigation, Role-Aware Dashboard Views, Loading Indicators, and Madrassa Arabic RTL mode toggle (`dir="rtl"`).
+- **HTTP Client**: Axios with JWT Request Interceptors & Response Error Handlers
+- **UI & Layout**: Responsive Component Architecture, Dynamic Navigation, Role-Aware Dashboard Views, Form Input Validation, Section Loading States, and Madrassa Arabic RTL mode toggle (`dir="rtl"`).
 
 ### Mobile
 - **Framework**: React Native (Expo)
@@ -36,7 +38,7 @@ SmartCampus.pk is an all-in-one Management & Automation Platform for Schools, Co
 │   ├── ai/                   # Decision support, predictive analytics, fraud detection, NL queries
 │   ├── config/               # Database and environment configurations
 │   ├── controllers/          # Request handlers for academic, admin, user, and financial routes
-│   ├── middleware/           # Auth, CORS, security, rate limiting, self-healing
+│   ├── middleware/           # Auth, RBAC, CORS, security, rate limiting, self-healing
 │   ├── models/               # Mongoose database schemas
 │   ├── routes/               # API route definitions
 │   ├── services/             # Core business logic (timetable generation, marksheets, etc.)
